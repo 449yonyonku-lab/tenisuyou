@@ -3,187 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="テニスダブルスの組み合わせを20試合分まとめて作成できる無料ツール">
     <title>テニスダブルス組み合わせメーカー</title>
+    <!-- 画像化のためのライブラリ -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 760px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { font-size: 24px; text-align: center; color: #2c3e50; margin-bottom: 8px; }
-        .lead { text-align: center; font-size: 14px; color: #666; margin-bottom: 20px; }
-        .guide { background: #f8faf9; border: 1px solid #e4ece8; border-radius: 6px; padding: 12px 14px; margin-bottom: 20px; font-size: 13px; line-height: 1.7; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { font-size: 20px; text-align: center; color: #2c3e50; }
         .form-group { margin-bottom: 15px; }
         label { display: block; font-weight: bold; margin-bottom: 5px; }
-        input, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
-        textarea { min-height: 140px; resize: vertical; }
+        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
         .hint { font-size: 12px; color: #7f8c8d; margin-top: 4px; }
-        .button-row { display: flex; gap: 10px; flex-wrap: wrap; }
-        button { flex: 1; min-width: 180px; padding: 12px; background-color: #27ae60; color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+        button { width: 100%; padding: 12px; background-color: #27ae60; color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
         button:hover { background-color: #2ecc71; }
-        button.secondary { background-color: #7f8c8d; }
-        button.secondary:hover { background-color: #95a5a6; }
         button.share-btn { background-color: #3498db; }
         button.share-btn:hover { background-color: #2980b9; }
+        
+        /* 対戦表（画像化エリア）のスタイル */
         #result-area { display: none; margin-top: 20px; }
         #capture-area { background-color: #fff; padding: 20px; border-radius: 8px; color: #000; width: 100%; box-sizing: border-box; }
-        .result-header { font-size: 16px; font-weight: bold; margin-bottom: 16px; color: #2c3e50; }
         .round { margin-bottom: 25px; border-bottom: 2px dashed #ddd; padding-bottom: 15px; }
         .round-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; border-left: 4px solid #27ae60; padding-left: 8px; }
         .courts-container { display: flex; flex-wrap: wrap; gap: 15px; }
-        .court { flex: 1; min-width: 180px; text-align: center; background: #f9f9f9; padding: 10px; border-radius: 6px; border: 1px solid #eee; }
+        .court { flex: 1; min-width: 120px; text-align: center; background: #f9f9f9; padding: 10px; border-radius: 6px; border: 1px solid #eee; }
         .court-name { font-weight: bold; font-size: 16px; color: #e67e22; margin-bottom: 8px; }
-        .team { font-size: 18px; font-weight: bold; letter-spacing: 0; line-height: 1.5; }
+        .team { font-size: 18px; font-weight: bold; letter-spacing: 2px; }
         .vs { font-size: 12px; color: #e74c3c; font-weight: bold; margin: 4px 0; }
         .rest-players { font-size: 12px; color: #7f8c8d; margin-top: 10px; }
+        
         #image-preview { display: none; width: 100%; border: 1px solid #ccc; margin-top: 10px; }
-        .footer-note { margin-top: 16px; font-size: 12px; color: #7f8c8d; text-align: center; }
     </style>
 </head>
 <body>
+
 <div class="container">
-    <h1>テニスダブルス組み合わせメーカー</h1>
-    <div class="lead">ブラウザだけで対戦表を20試合分作成できる</div>
-
-    <div class="guide">
-        1. コート名と参加人数を入力<br>
-        2. 名前を使いたい場合は参加者名を改行区切りで入力（未入力なら番号表示）<br>
-        3. 作成後に画像保存してそのままLINEなどで共有
-    </div>
-
+    <h1>テニス組み合わせメーカー</h1>
+    
     <div class="form-group">
-        <label for="court-names">使用するコート（カンマ区切り）</label>
+        <label for="court-names">使用するコート (カンマ区切り)</label>
         <input type="text" id="court-names" value="A, C" placeholder="例: A, C, E">
         <div class="hint">入力された数だけコート数として計算します</div>
     </div>
-
+    
     <div class="form-group">
-        <label for="players">参加人数（4〜30）</label>
+        <label for="players">参加人数 (4〜30)</label>
         <input type="number" id="players" min="4" max="30" value="8">
     </div>
-
-    <div class="form-group">
-        <label for="player-names">参加者名（任意・改行区切り）</label>
-        <textarea id="player-names" placeholder="例:
-田中
-佐藤
-鈴木
-高橋"></textarea>
-        <div class="hint">入力した場合は、参加人数と同じ人数分の名前が必要です</div>
-    </div>
-
-    <div class="button-row">
-        <button onclick="generateSchedule()">20試合分を作成する</button>
-        <button class="secondary" onclick="resetSettings()">入力を初期化</button>
-    </div>
-
+    
+    <button onclick="generateSchedule()">20試合分を作成する</button>
+    
     <div id="result-area">
-        <div class="button-row">
-            <button class="share-btn" onclick="shareImage()">画像を保存 / 共有する</button>
-            <button class="secondary" onclick="showScheduleTable()">対戦表を再表示</button>
-        </div>
+        <button class="share-btn" onclick="shareImage()">画像を保存 / 共有する</button>
         <img id="image-preview" alt="対戦表プレビュー">
-        <div id="capture-area"></div>
+        <div id="capture-area">
+            <!-- ここに対戦表が生成されます -->
+        </div>
     </div>
-
-    <div class="footer-note">GitHub Pagesでそのまま公開できる静的HTML版</div>
 </div>
 
 <script>
-    const STORAGE_KEY = 'tennis-schedule-maker-settings-v1';
-
-    document.addEventListener('DOMContentLoaded', loadSettings);
-
-    function loadSettings() {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (!saved) return;
-        try {
-            const data = JSON.parse(saved);
-            document.getElementById('court-names').value = data.courts || 'A, C';
-            document.getElementById('players').value = data.players || 8;
-            document.getElementById('player-names').value = data.playerNames || '';
-        } catch (e) {
-            console.error('設定の読み込みに失敗しました。', e);
-        }
-    }
-
-    function saveSettings() {
-        const data = {
-            courts: document.getElementById('court-names').value,
-            players: document.getElementById('players').value,
-            playerNames: document.getElementById('player-names').value
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    }
-
-    function resetSettings() {
-        document.getElementById('court-names').value = 'A, C';
-        document.getElementById('players').value = 8;
-        document.getElementById('player-names').value = '';
-        localStorage.removeItem(STORAGE_KEY);
-    }
-
-    function getPlayerLabels(numPlayers) {
-        const rawNames = document.getElementById('player-names').value.trim();
-        if (!rawNames) {
-            return Array.from({ length: numPlayers }, (_, i) => String(i + 1));
-        }
-
-        const names = rawNames
-            .split('\n')
-            .map(name => name.trim())
-            .filter(name => name !== '');
-
-        if (names.length !== numPlayers) {
-            alert(`参加人数は ${numPlayers} 人ですが、入力された名前は ${names.length} 人分です。人数を揃えてください。`);
-            return null;
-        }
-
-        return names;
-    }
-
     function generateSchedule() {
+        // 入力されたコート名をカンマで分割し、空白を除去して配列にする
         const courtsInput = document.getElementById('court-names').value;
         const courtLabels = courtsInput.split(',').map(s => s.trim()).filter(s => s !== '');
-
+        
         if (courtLabels.length === 0) {
-            alert('コート名を入力してください。（例：A, C）');
+            alert("コート名を入力してください。（例：A, C）");
             return;
         }
-
-        const numPlayers = parseInt(document.getElementById('players').value, 10);
-        if (Number.isNaN(numPlayers) || numPlayers < 4 || numPlayers > 30) {
-            alert('参加人数は4〜30人で入力してください。');
-            return;
-        }
-
-        const playerLabels = getPlayerLabels(numPlayers);
-        if (!playerLabels) return;
-
-        saveSettings();
 
         const numCourts = courtLabels.length;
+        const numPlayers = parseInt(document.getElementById('players').value);
+        
+        if (numPlayers < 4) {
+            alert("最低4人以上の参加者が必要です。");
+            return;
+        }
+
+        // 参加人数から、同時に試合できる最大人数を計算
         const maxPlayersPerRound = Math.min(numCourts * 4, Math.floor(numPlayers / 4) * 4);
-        const actualCourts = maxPlayersPerRound / 4;
+        const actualCourts = maxPlayersPerRound / 4; 
         const totalRounds = 20;
+        
+        // 履歴管理
+        let playCounts = Array(numPlayers + 1).fill(0);
+        let consecutiveRests = Array(numPlayers + 1).fill(0);
+        let pairHistory = Array.from({ length: numPlayers + 1 }, () => Array(numPlayers + 1).fill(0));
 
-        let playCounts = Array(numPlayers).fill(0);
-        let consecutiveRests = Array(numPlayers).fill(0);
-        let pairHistory = Array.from({ length: numPlayers }, () => Array(numPlayers).fill(0));
-
-        let html = `<div class="result-header">参加者 ${numPlayers} 人 / 使用コート ${courtLabels.slice(0, actualCourts).join(', ')}</div>`;
+        let html = '';
 
         for (let round = 1; round <= totalRounds; round++) {
-            let players = Array.from({ length: numPlayers }, (_, i) => i);
+            // 1. 試合に出る人を選ぶ（休み回数の公平化と連続休み防止）
+            let players = Array.from({length: numPlayers}, (_, i) => i + 1);
             players.sort((a, b) => {
+                // 優先度1: 連続休みが多い人を優先
                 if (consecutiveRests[b] !== consecutiveRests[a]) {
                     return consecutiveRests[b] - consecutiveRests[a];
                 }
+                // 優先度2: 試合数が少ない人を優先
                 return playCounts[a] - playCounts[b];
             });
 
             const activePlayers = players.slice(0, maxPlayersPerRound);
             const restPlayers = players.slice(maxPlayersPerRound);
 
+            // 履歴の更新（試合数と休み）
             activePlayers.forEach(p => {
                 playCounts[p]++;
                 consecutiveRests[p] = 0;
@@ -192,19 +116,21 @@
                 consecutiveRests[p]++;
             });
 
+            // 2. ペアと対戦相手の決定（重複防止アルゴリズム）
             let bestConfig = null;
             let bestScore = Infinity;
 
             for (let attempt = 0; attempt < 100; attempt++) {
                 let shuffled = [...activePlayers].sort(() => Math.random() - 0.5);
                 let score = 0;
-
+                
                 for (let c = 0; c < actualCourts; c++) {
                     let p1 = shuffled[c * 4];
                     let p2 = shuffled[c * 4 + 1];
                     let p3 = shuffled[c * 4 + 2];
                     let p4 = shuffled[c * 4 + 3];
-
+                    
+                    // ペアの重複は大きなペナルティ
                     score += pairHistory[p1][p2] * 100;
                     score += pairHistory[p3][p4] * 100;
                 }
@@ -213,9 +139,10 @@
                     bestScore = score;
                     bestConfig = shuffled;
                 }
-                if (score === 0) break;
+                if (score === 0) break; // 重複0が見つかったら即採用
             }
 
+            // 選ばれた組み合わせを履歴に記録
             for (let c = 0; c < actualCourts; c++) {
                 let p1 = bestConfig[c * 4];
                 let p2 = bestConfig[c * 4 + 1];
@@ -225,29 +152,30 @@
                 pairHistory[p3][p4]++; pairHistory[p4][p3]++;
             }
 
+            // 3. HTMLの生成
             html += `<div class="round">`;
             html += `<div class="round-title">${round}試合目</div>`;
             html += `<div class="courts-container">`;
-
+            
             for (let c = 0; c < actualCourts; c++) {
                 let p1 = bestConfig[c * 4];
                 let p2 = bestConfig[c * 4 + 1];
                 let p3 = bestConfig[c * 4 + 2];
                 let p4 = bestConfig[c * 4 + 3];
-
+                
                 html += `
                     <div class="court">
                         <div class="court-name">${courtLabels[c]}</div>
-                        <div class="team">${playerLabels[p1]} - ${playerLabels[p2]}</div>
+                        <div class="team">${p1} - ${p2}</div>
                         <div class="vs">VS</div>
-                        <div class="team">${playerLabels[p3]} - ${playerLabels[p4]}</div>
+                        <div class="team">${p3} - ${p4}</div>
                     </div>
                 `;
             }
             html += `</div>`;
-
+            
             if (restPlayers.length > 0) {
-                html += `<div class="rest-players">休み: ${restPlayers.map(i => playerLabels[i]).join(', ')}</div>`;
+                html += `<div class="rest-players">休み: ${restPlayers.sort((a,b)=>a-b).join(', ')}</div>`;
             }
             html += `</div>`;
         }
@@ -259,56 +187,45 @@
         captureArea.style.display = 'block';
     }
 
-    function showScheduleTable() {
-        document.getElementById('image-preview').style.display = 'none';
-        document.getElementById('capture-area').style.display = 'block';
-    }
-
     async function shareImage() {
         const captureArea = document.getElementById('capture-area');
-        if (!captureArea.innerHTML.trim()) {
-            alert('先に対戦表を作成してください。');
-            return;
-        }
-
+        
         const btn = document.querySelector('.share-btn');
         const originalText = btn.innerText;
-        btn.innerText = '画像生成中...';
+        btn.innerText = "画像生成中...";
         btn.disabled = true;
 
         try {
             const canvas = await html2canvas(captureArea, {
                 scale: 2,
-                backgroundColor: '#ffffff'
+                backgroundColor: "#ffffff"
             });
-
-            const dataUrl = canvas.toDataURL('image/png');
-
+            
+            const dataUrl = canvas.toDataURL("image/png");
+            
             const preview = document.getElementById('image-preview');
             preview.src = dataUrl;
             preview.style.display = 'block';
             captureArea.style.display = 'none';
 
-            if (navigator.share && navigator.canShare) {
+            if (navigator.share) {
                 const blob = await (await fetch(dataUrl)).blob();
                 const file = new File([blob], 'tennis_schedule.png', { type: 'image/png' });
-
-                if (navigator.canShare({ files: [file] })) {
-                    try {
-                        await navigator.share({
-                            title: 'テニス組み合わせ',
-                            files: [file]
-                        });
-                        return;
-                    } catch (e) {
-                        console.log('共有がキャンセルされました。');
-                    }
+                
+                try {
+                    await navigator.share({
+                        title: 'テニス組み合わせ',
+                        files: [file]
+                    });
+                } catch (e) {
+                    console.log("共有がキャンセルされました。");
+                    downloadImage(dataUrl);
                 }
+            } else {
+                downloadImage(dataUrl);
             }
-
-            downloadImage(dataUrl);
         } catch (error) {
-            alert('画像の生成に失敗しました。');
+            alert("画像の生成に失敗しました。");
             console.error(error);
         } finally {
             btn.innerText = originalText;
@@ -323,5 +240,6 @@
         link.click();
     }
 </script>
+
 </body>
 </html>
