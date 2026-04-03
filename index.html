@@ -29,7 +29,7 @@
         .court-name { font-weight: bold; font-size: 16px; color: #e67e22; margin-bottom: 8px; }
         .team { font-size: 18px; font-weight: bold; letter-spacing: 2px; }
         .vs { font-size: 12px; color: #e74c3c; font-weight: bold; margin: 4px 0; }
-        .rest-players { font-size: 13px; color: #555; margin-top: 10px; font-weight: bold; }
+        .rest-players { font-size: 14px; color: #555; margin-top: 10px; font-weight: bold; background: #fdf2e9; padding: 8px; border-radius: 4px; }
         
         #image-preview { display: none; width: 100%; border: 1px solid #ccc; margin-top: 10px; }
     </style>
@@ -47,7 +47,7 @@
     
     <div class="form-group">
         <label for="players">参加人数 (4〜30)</label>
-        <input type="number" id="players" min="4" max="30" value="8">
+        <input type="number" id="players" min="4" max="30" value="10">
     </div>
     
     <button onclick="generateSchedule()">20試合分を作成する</button>
@@ -93,56 +93,67 @@
 
         for (let round = 1; round <= totalRounds; round++) {
             
-            // 1. 休みの組み合わせをバラけさせる処理（200パターンのシミュレーション）
+            // 1. 休みメンバーの選出（ループ防止のための高度なアルゴリズム）
             let bestPlayersConfig = null;
             let bestRestScore = Infinity;
 
-            for (let attempt = 0; attempt < 200; attempt++) {
+            // 1000通りのランダムな組み合わせから、最も条件の良い休みの組み合わせを探す
+            for (let attempt = 0; attempt < 1000; attempt++) {
                 let players = Array.from({length: numPlayers}, (_, i) => i + 1);
-                
-                // 同条件の人をランダムにシャッフルするための乱数
-                let randomWeights = {};
-                players.forEach(p => randomWeights[p] = Math.random());
-                
-                players.sort((a, b) => {
-                    // 優先度1: 連続休みが多い人を優先して試合へ
-                    if (consecutiveRests[b] !== consecutiveRests[a]) {
-                        return consecutiveRests[b] - consecutiveRests[a];
-                    }
-                    // 優先度2: 試合数が少ない人を優先して試合へ
-                    if (playCounts[a] !== playCounts[b]) {
-                        return playCounts[a] - playCounts[b];
-                    }
-                    // 条件が同じ場合はランダム
-                    return randomWeights[a] - randomWeights[b];
-                });
+                players.sort(() => Math.random() - 0.5); // 完全ランダムシャッフル
 
                 const activeCandidates = players.slice(0, maxPlayersPerRound);
                 const restCandidates = players.slice(maxPlayersPerRound);
 
-                // 休む人同士の「過去に一緒に休んだ回数」をスコア化
-                let restScore = 0;
-                for (let i = 0; i < restCandidates.length; i++) {
-                    for (let j = i + 1; j < restCandidates.length; j++) {
-                        restScore += restHistory[restCandidates[i]][restCandidates[j]];
+                let score = 0;
+
+                // ペナルティ1: 連続休みの人は極力試合に出す
+                for (let p of restCandidates) {
+                    if (consecutiveRests[p] > 0) {
+                        score += consecutiveRests[p] * 10000; 
                     }
                 }
 
-                // 一番被りが少ない組み合わせを採用
-                if (restScore < bestRestScore) {
-                    bestRestScore = restScore;
+                // ペナルティ2: 休みの組み合わせが過去に被っている
+                for (let i = 0; i < restCandidates.length; i++) {
+                    for (let j = i + 1; j < restCandidates.length; j++) {
+                        score += restHistory[restCandidates[i]][restCandidates[j]] * 100;
+                    }
+                }
+
+                // ペナルティ3: 全体の試合回数の偏り
+                // (少しの偏りは許容することで、休みメンバーの固定化を破壊する)
+                let tempPlayCounts = [...playCounts];
+                for (let p of activeCandidates) tempPlayCounts[p]++;
+                
+                let maxCount = -1;
+                let minCount = Infinity;
+                for (let i = 1; i <= numPlayers; i++) {
+                    if (tempPlayCounts[i] > maxCount) maxCount = tempPlayCounts[i];
+                    if (tempPlayCounts[i] < minCount) minCount = tempPlayCounts[i];
+                }
+                
+                let diff = maxCount - minCount;
+                if (diff === 2) score += 50;      // 差が2回なら少しペナルティ（許容範囲）
+                else if (diff === 3) score += 500; // 差が3回はなるべく避ける
+                else if (diff > 3) score += 5000;  // 差が4回以上は絶対に避ける
+
+                // スコアが同じ場合にパターンを変えるための乱数
+                score += Math.random() * 10;
+
+                if (score < bestRestScore) {
+                    bestRestScore = score;
                     bestPlayersConfig = {
                         active: activeCandidates,
                         rest: restCandidates
                     };
                 }
-                if (bestRestScore === 0) break; // 被りゼロなら即採用
             }
 
             const activePlayers = bestPlayersConfig.active;
             const restPlayers = bestPlayersConfig.rest;
 
-            // 試合数と連続休みの履歴を更新
+            // 履歴の更新
             activePlayers.forEach(p => {
                 playCounts[p]++;
                 consecutiveRests[p] = 0;
@@ -151,7 +162,6 @@
                 consecutiveRests[p]++;
             });
 
-            // 休み被りの履歴を更新
             for (let i = 0; i < restPlayers.length; i++) {
                 for (let j = i + 1; j < restPlayers.length; j++) {
                     restHistory[restPlayers[i]][restPlayers[j]]++;
@@ -159,11 +169,11 @@
                 }
             }
 
-            // 2. 試合でのペア重複防止処理（200パターンのシミュレーション）
+            // 2. 試合ペアの選出（ペア重複防止）
             let bestConfig = null;
-            let bestScore = Infinity;
+            let bestMatchScore = Infinity;
 
-            for (let attempt = 0; attempt < 200; attempt++) {
+            for (let attempt = 0; attempt < 1000; attempt++) {
                 let shuffled = [...activePlayers].sort(() => Math.random() - 0.5);
                 let score = 0;
                 
@@ -173,13 +183,13 @@
                     let p3 = shuffled[c * 4 + 2];
                     let p4 = shuffled[c * 4 + 3];
                     
-                    // ペアの重複はペナルティ
+                    // ペアの重複ペナルティ
                     score += pairHistory[p1][p2] * 100;
                     score += pairHistory[p3][p4] * 100;
                 }
 
-                if (score < bestScore) {
-                    bestScore = score;
+                if (score < bestMatchScore) {
+                    bestMatchScore = score;
                     bestConfig = shuffled;
                 }
                 if (score === 0) break;
@@ -218,7 +228,8 @@
             html += `</div>`;
             
             if (restPlayers.length > 0) {
-                html += `<div class="rest-players">休み: ${restPlayers.sort((a,b)=>a-b).join(', ')}</div>`;
+                // 休みの人を見やすく表示
+                html += `<div class="rest-players">休憩: ${restPlayers.sort((a,b)=>a-b).join(' , ')}</div>`;
             }
             html += `</div>`;
         }
